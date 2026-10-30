@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build Store</title>
+<style>
+:root{--bg:#0b0d12;--card:#141821;--line:#232a38;--txt:#e8ecf4;--mut:#8a94a8;--acc:#7c5cff;--ok:#2ecc71}
+*{box-sizing:border-box}
+html{background:#0b0d12}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;line-height:1.4}
+nav{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#0b0d12ee}
+.logo{font-weight:800;letter-spacing:1px}.logo span{color:var(--acc)}
+nav a{color:var(--mut);text-decoration:none;font-size:14px}
+.hero{padding:44px 18px 24px;text-align:center;max-width:720px;margin:0 auto}
+.tag{color:var(--acc);font-size:12px;letter-spacing:2px;font-weight:700}
+.hero h1{font-size:34px;line-height:1.1;margin:10px 0}
+.hero p{color:var(--mut);margin:0 0 20px}
+button,.btn{background:var(--acc);color:#fff;border:0;border-radius:10px;padding:12px 16px;font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;display:inline-block}
+button.sec{background:#222a3a}
+main{max-width:720px;margin:0 auto;padding:8px 16px 48px}
+h2{font-size:22px;margin:24px 0 12px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.filters button{background:var(--card);border:1px solid var(--line);color:var(--mut);padding:8px 14px;font-size:14px}
+.filters button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+#list{display:grid;gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card small{color:var(--acc);font-weight:700;font-size:12px;letter-spacing:1px}
+.card h3{margin:4px 0;font-size:18px}.card p{margin:0 0 12px;color:var(--mut);font-size:14px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.price{font-weight:700;font-size:18px}
+footer{text-align:center;color:var(--mut);font-size:13px;padding:24px}
+#sheet{position:fixed;inset:0;background:#000a;display:none;align-items:flex-end;justify-content:center;z-index:9}
+#sheet.on{display:flex}
+.box{background:var(--card);border-top:1px solid var(--line);border-radius:18px 18px 0 0;width:100%;max-width:520px;padding:20px;max-height:90vh;overflow:auto}
+#qr{display:flex;justify-content:center;margin:10px 0}
+#qr canvas,#qr img{background:#fff;padding:8px;border-radius:10px;max-width:220px}
+textarea{width:100%;height:80px;background:var(--bg);color:var(--mut);border:1px solid var(--line);border-radius:10px;padding:8px;font-size:12px}
+.c{text-align:center}.mut{color:var(--mut);font-size:14px}.ok{color:var(--ok)}
+</style>
+</head>
+<body>
+<nav><div class="logo">BUILD<span>STORE</span></div><a href="#vitrine">Catálogo</a></nav>
+<section class="hero">
+  <div class="tag">MARKETPLACE DE BUILDS</div>
+  <h1>Construa seu próximo grande jogo.</h1>
+  <p>Mapas, cenários e estruturas para acelerar seus projetos no Roblox Studio. Pague no Pix e receba sua build.</p>
+  <a class="btn" href="#vitrine">Explorar builds</a>
+</section>
+<main id="vitrine">
+  <h2>Explore as builds</h2>
+  <div class="filters" id="filters"></div>
+  <div id="list"></div>
+</main>
+<footer>© Build Store · Arquivos digitais para Roblox Studio</footer>
+<div id="sheet"><div class="box" id="box"></div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+/* ===== EDITE SÓ ESTA PARTE ===== */
+const PIX_KEY  = '+5581982257047';   // telefone sempre com +55 e DDD; CPF, e-mail ou chave aleatória sem mudanças
+const PIX_NAME = 'ADRYEL LINS';
+const PIX_CITY = 'SAO JOSE';
+
+const PRODUCTS = [
+  { id: 'castelo', cat: 'Estruturas', name: 'Castelo Medieval', price: 19.90, desc: 'Build completa, pronta para o Studio.' },
+  { id: 'spawn',   cat: 'Mapas',      name: 'Spawn Moderno',    price: 9.90,  desc: 'Área inicial com decoração.' },
+];
+/* =============================== */
+
+const $ = (s) => document.querySelector(s);
+const brl = (n) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+let cat = 'Todos';
+
+/* Gera o código Pix "copia e cola" com o valor já preenchido */
+const f = (id, v) => id + String(v.length).padStart(2, '0') + v;
+function crc(s){ let c = 0xFFFF; for (let i = 0; i < s.length; i++){ c ^= s.charCodeAt(i) << 8; for (let j = 0; j < 8; j++) c = (c & 0x8000) ? ((c << 1) ^ 0x1021) : (c << 1); c &= 0xFFFF; } return c.toString(16).toUpperCase().padStart(4, '0'); }
+function pixCode(amount){
+  const p = f('00','01') + f('01','11') + f('26', f('00','br.gov.bcb.pix') + f('01', PIX_KEY)) +
+    f('52','0000') + f('53','986') + f('54', amount.toFixed(2)) + f('58','BR') +
+    f('59', PIX_NAME) + f('60', PIX_CITY) + f('62', f('05','***')) + '6304';
+  return p + crc(p);
+}
+
+function filters(){
+  const cats = ['Todos', ...new Set(PRODUCTS.map(p => p.cat))];
+  $('#filters').innerHTML = cats.map(c => `<button data-c="${c}" class="${c === cat ? 'on' : ''}">${c}</button>`).join('');
+}
+function show(){
+  filters();
+  $('#list').innerHTML = PRODUCTS.filter(p => cat === 'Todos' || p.cat === cat).map(p => `
+    <div class="card"><small>${p.cat.toUpperCase()}</small><h3>${p.name}</h3><p>${p.desc}</p>
+    <div class="row"><span class="price">${brl(p.price)}</span>
+    <button onclick="buy('${p.id}')">Comprar</button></div></div>`).join('');
+}
+$('#filters').onclick = (e) => { if (e.target.dataset.c) { cat = e.target.dataset.c; show(); } };
+show();
+
+function close_(){ $('#sheet').classList.remove('on'); }
+$('#sheet').addEventListener('click', e => { if (e.target.id === 'sheet') close_(); });
+
+function buy(id){
+  const p = PRODUCTS.find(x => x.id === id);
+  const code = pixCode(p.price);
+  $('#box').innerHTML = `<h2 class="c">${p.name} · ${brl(p.price)}</h2>
+    <div id="qr"></div>
+    <p class="mut c">Pague pelo QR Code ou copie o código Pix e cole no app do seu banco:</p>
+    <textarea id="cd" readonly>${code}</textarea>
+    <button class="sec" style="width:100%;margin:8px 0" onclick="navigator.clipboard.writeText($('#cd').value);this.textContent='Copiado ✓'">Copiar código Pix</button>
+    <button style="width:100%" onclick="chat('${p.id}')">Já paguei: falar no chat</button>
+    <p class="mut c">No chat, escreva o nome da build e envie o comprovante. Depois de conferir, você recebe o link da build.</p>`;
+  $('#sheet').classList.add('on');
+  try { new QRCode($('#qr'), { text: code, width: 200, height: 200, correctLevel: QRCode.CorrectLevel.M }); } catch (e) {}
+}
+function chat(id){
+  const p = PRODUCTS.find(x => x.id === id);
+  close_();
+  try {
+    Tawk_API.addEvent('pagamento-informado', { produto: p.name, valor: brl(p.price) }, function(){});
+    Tawk_API.maximize();
+  } catch (e) {}
+}
+</script>
+<!--Start of Tawk.to Script-->
+<script type="text/javascript">
+var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+(function(){
+var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+s1.async=true;
+s1.src='https://embed.tawk.to/69e541ca3ca1cc1c339ffa48/1jmjoi093';
+s1.charset='UTF-8';
+s1.setAttribute('crossorigin','*');
+s0.parentNode.insertBefore(s1,s0);
+})();
+</script>
+<!--End of Tawk.to Script-->
+</body>
+</html>
